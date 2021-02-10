@@ -57,12 +57,12 @@ if clientID!=-1:
                 res = sim.simxSetJointTargetVelocity(clientID, rightJoint, 5, sim.simx_opmode_oneshot)
                 res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 5, sim.simx_opmode_oneshot)
                 print('Have the ball')
-                #if (facingGoalLine):
-                #    res = sim.simxSetJointTargetVelocity(clientID, rightJoint, 5, sim.simx_opmode_oneshot)
-                #    res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 5, sim.simx_opmode_oneshot)
-                #else:
-                #    res = sim.simxSetJointTargetVelocity(clientID, rightJoint, -1, sim.simx_opmode_oneshot)
-                #    res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 1, sim.simx_opmode_oneshot)
+                if (facingGoalLine):
+                    res = sim.simxSetJointTargetVelocity(clientID, rightJoint, 5, sim.simx_opmode_oneshot)
+                    res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 5, sim.simx_opmode_oneshot)
+                else:
+                    res = sim.simxSetJointTargetVelocity(clientID, rightJoint, -1, sim.simx_opmode_oneshot)
+                    res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 1, sim.simx_opmode_oneshot)
 
         else:
             res = sim.simxSetJointTargetVelocity(clientID, rightJoint, -1, sim.simx_opmode_oneshot)
