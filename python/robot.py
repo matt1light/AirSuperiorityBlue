@@ -30,32 +30,42 @@ if clientID!=-1:
 
     # Now try to retrieve data in a blocking fashion (i.e. a service call):
     res,leftJoint=sim.simxGetObjectHandle(clientID,"Left_joint",sim.simx_opmode_blocking)
-    if res==sim.simx_return_ok:
-        print ('Connected to left joint')
-    else:
-        print ('Remote API function call returned with error code: ',res)
     res,rightJoint=sim.simxGetObjectHandle(clientID,"Right_joint",sim.simx_opmode_blocking)
-    if res==sim.simx_return_ok:
-        print ('Connected to left joint')
-    else:
-        print ('Remote API function call returned with error code: ',res)
-
     res,ballSensor=sim.simxGetObjectHandle(clientID,"Ball_Sensor",sim.simx_opmode_blocking)
-    if res==sim.simx_return_ok:
-        print ('Connected to ballSensor')
-    else:
-        print ('Remote API function call returned with error code: ',res)
-
+    res,proximitySensor=sim.simxGetObjectHandle(clientID, "Proximity_sensor", sim.simx_opmode_blocking)
+    res,goalLineSensor=sim.simxGetObjectHandle(clientID, "Goal_Line_Sensor", sim.simx_opmode_blocking)
 
     res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 1, sim.simx_opmode_oneshot)
     while True:
-        print('Still connected')
-        res, detectionState, Data = sim.simxReadVisionSensor(clientID, ballSensor, sim.simx_opmode_blocking)
-        print(Data)
-        if(Data[0][9]<0.3):
-            res = sim.simxSetJointTargetVelocity(clientID, rightJoint, 1, sim.simx_opmode_oneshot)
+        res, ballDetectionState, ballSensorData = sim.simxReadVisionSensor(clientID, ballSensor, sim.simx_opmode_blocking)
+        res, proxDetectionState, detectedPoint, detectedObjectHandle, detectedSurfaceNormalVector = sim.simxReadProximitySensor(clientID, proximitySensor, sim.simx_opmode_blocking)
+        res, goalLineSensorState, goalLineSensorData = sim.simxReadVisionSensor(clientID, goalLineSensor, sim.simx_opmode_blocking)
+
+        facingBall = ballSensorData[0][9]<0.3
+        touchingBall = (proxDetectionState and detectedPoint[2]<0.13)
+        facingGoalLine = goalLineSensorData[0][9]<0.3
+        print(facingGoalLine)
+        print(detectedPoint)
+
+        if(facingBall):
+            if(not touchingBall):
+                res = sim.simxSetJointTargetVelocity(clientID, rightJoint, 5, sim.simx_opmode_oneshot)
+                res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 5, sim.simx_opmode_oneshot)
+            else:
+                res = sim.simxSetJointTargetVelocity(clientID, rightJoint, 5, sim.simx_opmode_oneshot)
+                res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 5, sim.simx_opmode_oneshot)
+                print('Have the ball')
+                #if (facingGoalLine):
+                #    res = sim.simxSetJointTargetVelocity(clientID, rightJoint, 5, sim.simx_opmode_oneshot)
+                #    res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 5, sim.simx_opmode_oneshot)
+                #else:
+                #    res = sim.simxSetJointTargetVelocity(clientID, rightJoint, -1, sim.simx_opmode_oneshot)
+                #    res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 1, sim.simx_opmode_oneshot)
+
         else:
-            res = sim.simxSetJointTargetVelocity(clientID, rightJoint, 0, sim.simx_opmode_oneshot)
+            res = sim.simxSetJointTargetVelocity(clientID, rightJoint, -1, sim.simx_opmode_oneshot)
+            res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 1, sim.simx_opmode_oneshot)
+
 
 
     # Now send some data to CoppeliaSim in a non-blocking fashion:
