@@ -34,18 +34,20 @@ if clientID!=-1:
     res,ballSensor=sim.simxGetObjectHandle(clientID,"Ball_Sensor",sim.simx_opmode_blocking)
     res,proximitySensor=sim.simxGetObjectHandle(clientID, "Proximity_sensor", sim.simx_opmode_blocking)
     res,goalLineSensor=sim.simxGetObjectHandle(clientID, "Goal_Line_Sensor", sim.simx_opmode_blocking)
+    res,goalDetectionSensorA=sim.simxGetObjectHandle(clientID, "Goal_Detection_Sensor_A", sim.simx_opmode_blocking)
 
     res = sim.simxSetJointTargetVelocity(clientID, leftJoint, 1, sim.simx_opmode_oneshot)
     while True:
         res, ballDetectionState, ballSensorData = sim.simxReadVisionSensor(clientID, ballSensor, sim.simx_opmode_blocking)
         res, proxDetectionState, detectedPoint, detectedObjectHandle, detectedSurfaceNormalVector = sim.simxReadProximitySensor(clientID, proximitySensor, sim.simx_opmode_blocking)
         res, goalLineSensorState, goalLineSensorData = sim.simxReadVisionSensor(clientID, goalLineSensor, sim.simx_opmode_blocking)
+        res, goalScoredAState, goalScoredAData = sim.simxReadVisionSensor(clientID, goalDetectionSensorA, sim.simx_opmode_blocking)
 
         facingBall = ballSensorData[0][9]<0.3
         touchingBall = (proxDetectionState and detectedPoint[2]<0.13)
         facingGoalLine = goalLineSensorData[0][9]<0.3
-        print(facingGoalLine)
-        print(detectedPoint)
+        goalScoredA = goalScoredAData[0][9]<0.3
+        print(goalScoredA)
 
         if(facingBall):
             if(not touchingBall):
