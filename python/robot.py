@@ -29,11 +29,6 @@ class SoccerRobot:
     """
 
     def __init__(self, clientID):
-        # getting the initial body position and store it for later use
-        # when resetting
-        self.res, self.body = sim.simxGetObjectHandle(
-            clientID, "Body", sim.simx_opmode_blocking
-        )
         self.res, self.ball = sim.simxGetObjectHandle(
             clientID, "Ball", sim.simx_opmode_blocking
         )
@@ -61,70 +56,21 @@ class SoccerRobot:
             clientID, self.leftJoint, 1, sim.simx_opmode_oneshot
         )
         self.objects = [
-            self.body,
             self.leftJoint,
             self.rightJoint,
             self.ballSensor,
             self.proximitySensor,
             self.goalLineSensor,
         ]
-        self.objects.append(
-            sim.simxGetObjectHandle(clientID, "Square", sim.simx_opmode_blocking)[1]
-        )
-        self.objects.append(
-            sim.simxGetObjectHandle(clientID, "Cubiod", sim.simx_opmode_blocking)[1]
-        )
-        self.objects.append(
-            sim.simxGetObjectHandle(clientID, "Cuboid1", sim.simx_opmode_blocking)[1]
-        )
-        self.objects.append(
-            sim.simxGetObjectHandle(clientID, "Right_wheel", sim.simx_opmode_blocking)[1]
-        )
-        self.objects.append(
-            sim.simxGetObjectHandle(clientID, "Left_wheel", sim.simx_opmode_blocking)[1]
-        )
-        self.objects.append(
-            sim.simxGetObjectHandle(clientID, "Castor_Joint", sim.simx_opmode_blocking)[1]
-        )
         self.get_initial_positions()
 
     def get_initial_positions(self):
         self.initial_ball_position = sim.simxGetObjectPosition(clientID, self.ball, -1, sim.simx_opmode_blocking)[1]
-        self.initial_quaternions = [
-            sim.simxGetObjectQuaternion(clientID, obj, -1, sim.simx_opmode_blocking)[1]
-            for obj in self.objects
-        ]
-        self.initial_positions = [
-            sim.simxGetObjectPosition(clientID, obj, -1, sim.simx_opmode_blocking)[1]
-            for obj in self.objects
-        ]
 
     def set_initial_positions(self):
-        #sim.c_PauseSimulation(clientID, sim.simx_opmode_oneshot)
-        """
-        self.res = sim.simxSetObjectPosition(
-            clientID, self.body, -1, self.initialPosition, sim.simx_opmode_blocking
-        )
-        """
         sim.simxSetObjectPosition(
             clientID, self.ball, -1, self.initial_ball_position, sim.simx_opmode_blocking
         )
-        """
-        [
-            sim.simxSetObjectPosition(
-                clientID, obj, -1, init_pos, sim.simx_opmode_blocking
-            )
-            for obj, init_pos in zip(self.objects, self.initial_positions)
-        ]
-        """
-        """
-        [
-            sim.simxSetObjectQuaternion(
-                clientID, obj, -1, init_pos, sim.simx_opmode_blocking
-            )
-            for obj, init_pos in zip(self.objects, self.initial_quaternions)
-        ]
-        """
 
     def update_robot(self, clientID) -> bool:
         _, ballDetectionState, ballSensorData = sim.simxReadVisionSensor(
