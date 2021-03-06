@@ -1,0 +1,18 @@
+@startuml
+skinparam linetype polyline
+
+
+[*] --> GameOn
+
+
+GameOn ---> CheckScore1 : Player 1 Scored, Increment Score 1
+GameOn ---> CheckScore2 : Player 2 Scored, Increment Score 2
+CheckScore1 ---> Robot1Win : Score 1 > = 10
+CheckScore1 ---> GameOn : Score 1 < 10
+CheckScore2 ---> Robot2Win : Score 2 >= 10
+CheckScore2 ---> GameOn : Score 1 < 10
+
+Robot2Win --> [*]
+Robot1Win --> [*]
+
+@enduml

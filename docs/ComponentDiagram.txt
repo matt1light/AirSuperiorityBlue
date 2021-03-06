@@ -1,0 +1,27 @@
+@startuml
+
+package "CoppeliaSim Simulation" {
+	[Robot1] <-- [Lua Script]
+	[Robot2] <-- [Lua Script]
+	[Ball] <-- [Lua Script]
+	[GoalLine1] <-- [Lua Script]
+	[GoalLine2] <-- [Lua Script]
+	[Scoreboard] <-- [Lua Script]
+
+	[Lua Script] -- CoppeliaSimAPI
+
+}
+
+package "Python Runtime" {
+	CoppeliaSimAPI <-- [CoppeliaSimPythonClient] : Port 99999
+
+	[CoppeliaSimPythonClient] <-- [GameState Control]
+	[CoppeliaSimPythonClient] <-- [Robot1 Control]
+	[CoppeliaSimPythonClient] <-- [Robot2 Control]
+	[CoppeliaSimPythonClient] <-- [Goal Detection]
+	[CoppeliaSimPythonClient] <-- [Watchdog]
+	[Watchdog] -> [GameState Control]
+	[Goal Detection] -> [GameState Control]
+}
+
+@enduml
