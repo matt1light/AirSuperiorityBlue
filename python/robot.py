@@ -63,6 +63,8 @@ class SoccerRobot:
             self.goalLineSensor,
         ]
         self.get_initial_positions()
+        self.dialog = 0
+        self.messagebox = 0
 
     def get_initial_positions(self):
         self.initial_ball_position = sim.simxGetObjectPosition(clientID, self.ball, -1, sim.simx_opmode_blocking)[1]
@@ -71,6 +73,7 @@ class SoccerRobot:
         sim.simxSetObjectPosition(
             clientID, self.ball, -1, self.initial_ball_position, sim.simx_opmode_blocking
         )
+        _,self.dialog,_ = sim.simxDisplayDialog(clientID, " ", "Begin!", 0, " ", None , None ,sim.simx_opmode_blocking)
 
     def update_robot(self, clientID) -> bool:
         _, ballDetectionState, ballSensorData = sim.simxReadVisionSensor(
@@ -85,7 +88,11 @@ class SoccerRobot:
         _, goalScoredAState, goalScoredAData = sim.simxReadVisionSensor(
             clientID, self.goalDetectionSensorA, sim.simx_opmode_blocking
         )
-
+        
+        if self.messagebox == 0:
+            sim.simxEndDialog(clientID,self.dialog,sim.simx_opmode_oneshot)
+            self.messagebox = 1
+        
         facingBall = ballSensorData[0][9] < 0.3
         touchingBall = proxDetectionState and detectedPoint[2] < 0.15
         facingGoalLine = goalLineSensorData[0][9] < 0.3
