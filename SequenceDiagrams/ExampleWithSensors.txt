@@ -1,0 +1,28 @@
+@startuml
+
+autonumber
+
+PythonRobot -> CoppeliaSim: simxReadVisionSensor()
+
+activate CoppeliaSim
+CoppeliaSim -> RobotVisionSensor: Get Vision Data
+RobotVisionSensor -> CoppeliaSim: return sensor data
+CoppeliaSim -> PythonRobot: return ballSensorData
+
+alt facingBall
+PythonRobot -> CoppeliaSim: simxSetJointTargetVelocity(rightJoint)
+CoppeliaSim -> RobotLeftJoint: Set Right Wheel Velocity
+PythonRobot -> CoppeliaSim: simxSetJointTargetVelocity(leftJoint)
+CoppeliaSim -> RobotRightJoint: Set Left Wheel Velocity
+
+else not facingBall
+
+PythonRobot -> CoppeliaSim: simxSetJointTargetVelocity(rightJoint)
+CoppeliaSim -> RobotVisionSensor: Set Right Wheel Velocity
+PythonRobot -> CoppeliaSim: simxSetJointTargetVelocity(leftJoint)
+CoppeliaSim -> RobotVisionSensor: Set Left Wheel Velocity
+end
+
+deactivate CoppeliaSim
+
+@enduml
