@@ -1,0 +1,72 @@
+@startuml
+
+state BallDetection {
+	state 000 {
+	}
+	state 001 {
+	}
+	state 010 {
+	}
+	state 011 {
+	}
+}
+
+state BallMovement {
+	state 100 {
+	}
+	state 101 {
+	}
+}
+
+state GoalLineDetection {
+	state 110 {
+	}
+}
+
+state GoalLineMovement {
+	state 111 {
+	}
+}
+
+note "The state of the robot is determined by\nthe value of its sensors\nBallDetection, BallProximity, and GoalLineDetection\n0 is not triggered 1 is triggered" as N1
+
+[*] --> 000
+
+BallDetection -[hidden]-> BallMovement
+BallMovement -[hidden]-> GoalLineDetection
+GoalLineDetection -[hidden]--> GoalLineMovement
+
+
+000 --> 001 : GoalLine/1
+000 --> 010 : Proximity/1
+000 --> 100 : Ball/1
+
+001 --> 000 : GoalLine/0
+001 --> 011 : Proximity/1
+001 --> 101 : Ball/1
+
+010 --> 011 : GoalLine/1
+010 --> 000 : Proximity/0
+010 --> 110 : Ball/1
+
+011 --> 010 : GoalLine/0
+011 --> 001 : Proximity/0
+011 --> 111 : Ball/1
+
+100 --> 101 : GoalLine/1
+100 --> 110 : Proximity/1
+100 --> 000 : Ball/0
+
+101 --> 100 : GoalLine/0
+101 --> 111 : Proximity/1
+101 --> 001 : Ball/0
+
+110 --> 111 : GoalLine/1
+110 --> 100 : Proximity/0
+110 --> 010 : Ball/1
+
+111 --> 110 : GoalLine/0
+111 --> 101 : Proximity/0
+111 --> 011 : Ball/0
+
+@end uml
