@@ -1,1 +1,0 @@
-Go here to render these https://plantuml-editor.kkeisuke.com/
