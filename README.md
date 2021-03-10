@@ -1,6 +1,12 @@
 # AirSuperiorityBlue
 SYSC 4805 Project
 
+# Running the script
+Open scene.ttt file 
+Start simulation
+Open robot.py script located in Python directory of repository
+Run robot.py
+
 # Group member contributions
 | Commit Hash           | Group Member | Contribution                                       |
 |-----------------------|--------------|----------------------------------------------------|
