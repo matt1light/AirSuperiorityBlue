@@ -25,11 +25,9 @@ except:
 import time
 
 class WatchDog:
-    def __init__(self, clientID):
+    def __init__(self, clientID, ball):
         # Fetch the object handle for the ball
-        self.res, self.ball = sim.simxGetObjectHandle(
-            clientID, "Ball", sim.simx_opmode_blocking
-        )
+        self.ball = ball
 
         # The location of the ball in the last game loop
         self.last_ball_position = sim.simxGetObjectPosition(clientID, self.ball, -1, sim.simx_opmode_blocking)[1]
@@ -48,17 +46,24 @@ class WatchDog:
         # Get the current time
         current_time = time.time()
         # If the ball has moved then update the stored ball location, and set the last moved time to the current time
-        if (new_position != self.ball_position):
+        rounded_new_position = [round(elem, 3) for elem in new_position]
+        rounded_last_position = [round(elem, 3) for elem in self.last_ball_position]
+
+        if (rounded_new_position != rounded_last_position):
             self.last_ball_position = new_position
             self.last_moved_time = current_time
         else:
             # If the ball hasn't moved, check if the time since the last move is more than the timeout value
             time_elapsed = current_time - self.last_moved_time
+            print(time_elapsed)
             if (time_elapsed >= self.timeout):
                 # If the ball has not moved in timeout number of seconds, we reset the location of the ball
-                sim.simxSetObjectPosition(
-                    self.clientID, self.ball, -1, self.initial_ball_position, sim.simx_opmode_blocking
-                )
+                self.set_initial_positions()
+
+    def set_initial_positions(self):
+        sim.simxSetObjectPosition(
+            self.clientID, self.ball, -1, [random.uniform(-1,1), random.uniform(-0.5, 0.5), 0.05], sim.simx_opmode_blocking
+        )
 
 class Scoreboard:
     def __init__(self, clientID):
@@ -99,6 +104,8 @@ class GameState:
         self.dialog = 0
         self.messagebox = 0
 
+        self.watchdog = WatchDog(clientID, self.ball)
+
         self.scoreBoard = Scoreboard(clientID)
 
     def gameLoop(self):
@@ -112,6 +119,8 @@ class GameState:
         _, goalScoredBState, goalScoredBData = sim.simxReadVisionSensor(
             clientID, self.goalDetectionSensorB, sim.simx_opmode_blocking
         )
+
+        self.watchdog.update_watchdog()
 
         goalScoredA = goalScoredAData[0][9] < 0.3
         goalScoredB = goalScoredBData[0][9] < 0.3
