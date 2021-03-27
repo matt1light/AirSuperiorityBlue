@@ -108,7 +108,7 @@ class GameState:
         self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=1)
         self.clientID = clientID
 
-        self.set_initial_positions()
+        # self.set_initial_positions()
         self.dialog = 0
         self.messagebox = 0
 
@@ -240,7 +240,7 @@ class SoccerRobot:
         facingBall = ballSensorData[0][9] < 0.3
         ballLeft = ballSensorData3[0][9] < 0.3
         ballRight = ballSensorData2[0][9] < 0.3
-        touchingBall = proxDetectionState and detectedPoint[2] < 0.2
+        touchingBall = proxDetectionState and detectedPoint[2] < 0.25
         facingGoalLine = goalLineSensorData[0][9] < 0.3
 
         if facingBall:
