@@ -112,7 +112,7 @@ class GameState:
         self.dialog = 0
         self.messagebox = 0
 
-        # self.watchdog = WatchDog(clientID, self.ball)
+        self.watchdog = WatchDog(clientID, self.ball)
 
         self.scoreBoard = Scoreboard(clientID)
 
@@ -124,7 +124,7 @@ class GameState:
             self.gameLoop()
 
     def gameLoop(self):
-        # self.bot2.update_robot()
+        self.bot2.update_robot()
         self.bot.update_robot()
         if self.messagebox == 0:
             sim.simxEndDialog(clientID,self.dialog,sim.simx_opmode_oneshot)
