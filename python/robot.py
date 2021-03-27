@@ -211,6 +211,9 @@ class SoccerRobot:
             self.goalLineSensor,
         ]
 
+        self.base_speed = 5
+        self.slow_speed = 0.5
+
         self.last_location = []
         self.last_movement_time = 0
         self.timeout = 10
@@ -243,50 +246,50 @@ class SoccerRobot:
         if facingBall:
             if not touchingBall:
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, self.base_speed, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, self.base_speed, sim.simx_opmode_oneshot
                 )
             else:
                 if facingGoalLine:
                     _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
+                        self.clientID, self.rightJoint, self.base_speed, sim.simx_opmode_oneshot
                     )
                     _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
+                        self.clientID, self.leftJoint, self.base_speed, sim.simx_opmode_oneshot
                     )
                 else:
                     _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.rightJoint, -0.5*self.direction, sim.simx_opmode_oneshot
+                        self.clientID, self.rightJoint, -self.slow_speed*self.direction, sim.simx_opmode_oneshot
                     )
                     _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.leftJoint, 0.5*self.direction, sim.simx_opmode_oneshot
+                        self.clientID, self.leftJoint, self.slow_speed*self.direction, sim.simx_opmode_oneshot
                     )
 
         else:
             if ballRight:
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, 0.5, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, self.slow_speed, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, 0.1, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, self.slow_speed/2, sim.simx_opmode_oneshot
                 )
         
             elif ballLeft:
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, 0.1, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, self.slow_speed/2, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, 0.5, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, self.slow_speed, sim.simx_opmode_oneshot
                 )
         
             else:
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, 0.5*self.direction, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, -self.slow_speed*self.direction, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, -0.5*self.direction, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, self.slow_speed*self.direction, sim.simx_opmode_oneshot
                 )
         
         new_position = sim.simxGetObjectPosition(self.clientID, self.ballSensor, -1, sim.simx_opmode_blocking)[1]
