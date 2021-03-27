@@ -104,8 +104,8 @@ class GameState:
         self.res, self.goalDetectionSensorB = sim.simxGetObjectHandle(
             clientID, "Goal_Detection_Sensor_B", sim.simx_opmode_blocking
         )
-        self.bot = SoccerRobot(clientID=clientID, robotLetter="A")
-        self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B")
+        self.bot = SoccerRobot(clientID=clientID, robotLetter="A", direction=1)
+        self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=-1)
         self.clientID = clientID
 
         # self.set_initial_positions()
@@ -116,7 +116,7 @@ class GameState:
 
         self.scoreBoard = Scoreboard(clientID)
 
-        self.maxScore = 1
+        self.maxScore = 5
         self.quit = False
 
     def start(self):
@@ -172,7 +172,7 @@ class SoccerRobot:
     """
 
     """
-    def __init__(self, clientID, robotLetter):
+    def __init__(self, clientID, robotLetter, direction):
         # Now try to retrieve data in a blocking fashion (i.e. a service call):
         self.res, self.leftJoint = sim.simxGetObjectHandle(
             clientID, f"Left_joint_{robotLetter}", sim.simx_opmode_blocking
@@ -195,6 +195,8 @@ class SoccerRobot:
         )
         self.clientID = clientID
 
+        self.direction = direction
+
         self.objects = [
             self.leftJoint,
             self.rightJoint,
@@ -202,6 +204,10 @@ class SoccerRobot:
             self.proximitySensor,
             self.goalLineSensor,
         ]
+
+        self.last_location = []
+        self.last_movement_time = 0
+        self.timeout = 10
 
     
 
@@ -217,7 +223,7 @@ class SoccerRobot:
         )
 
         facingBall = ballSensorData[0][9] < 0.3
-        touchingBall = proxDetectionState and detectedPoint[2] < 0.15
+        touchingBall = proxDetectionState and detectedPoint[2] < 0.2
         facingGoalLine = goalLineSensorData[0][9] < 0.3
 
         if facingBall:
@@ -229,12 +235,6 @@ class SoccerRobot:
                     self.clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
                 )
             else:
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
-                )
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
-                )
                 if facingGoalLine:
                     _ = sim.simxSetJointTargetVelocity(
                         self.clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
@@ -244,19 +244,42 @@ class SoccerRobot:
                     )
                 else:
                     _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.rightJoint, -0.5, sim.simx_opmode_oneshot
+                        self.clientID, self.rightJoint, -0.5*self.direction, sim.simx_opmode_oneshot
                     )
                     _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.leftJoint, 0.5, sim.simx_opmode_oneshot
+                        self.clientID, self.leftJoint, 0.5*self.direction, sim.simx_opmode_oneshot
                     )
 
         else:
             _ = sim.simxSetJointTargetVelocity(
-                self.clientID, self.rightJoint, -0.5, sim.simx_opmode_oneshot
+                self.clientID, self.rightJoint, 0.5*self.direction, sim.simx_opmode_oneshot
             )
             _ = sim.simxSetJointTargetVelocity(
-                self.clientID, self.leftJoint, 0.5, sim.simx_opmode_oneshot
+                self.clientID, self.leftJoint, -0.5*self.direction, sim.simx_opmode_oneshot
             )
+        
+        new_position = sim.simxGetObjectPosition(self.clientID, self.ballSensor, -1, sim.simx_opmode_blocking)[1]
+        # Get the current time
+        current_time = time.time()
+        # If the ball has moved then update the stored ball location, and set the last moved time to the current time
+        rounded_new_position = [round(elem, 1) for elem in new_position]
+        rounded_last_position = [round(elem, 1) for elem in self.last_location]
+
+        if (rounded_new_position != rounded_last_position):
+            self.last_location = new_position
+            self.last_movement_time = current_time
+        else:
+            # If the ball hasn't moved, check if the time since the last move is more than the timeout value
+            time_elapsed = current_time - self.last_movement_time
+            if (time_elapsed >= self.timeout):
+                # If the ball has not moved in timeout number of seconds, we reset the location of the ball
+                print(f"Robot did not move for {self.timeout} seconds, so it reversed")
+                _ = sim.simxSetJointTargetVelocity(
+                    self.clientID, self.rightJoint, -20, sim.simx_opmode_oneshot
+                )
+                _ = sim.simxSetJointTargetVelocity(
+                    self.clientID, self.leftJoint, -20, sim.simx_opmode_oneshot
+                )
 
         return False
     
