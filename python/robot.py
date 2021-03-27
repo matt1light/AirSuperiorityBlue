@@ -104,15 +104,15 @@ class GameState:
         self.res, self.goalDetectionSensorB = sim.simxGetObjectHandle(
             clientID, "Goal_Detection_Sensor_B", sim.simx_opmode_blocking
         )
-        self.bot = SoccerRobot(clientID=clientID, robotLetter="A", direction=1)
-        self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=-1)
+        self.bot = SoccerRobot(clientID=clientID, robotLetter="A", direction=-1)
+        self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=1)
         self.clientID = clientID
 
         self.set_initial_positions()
         self.dialog = 0
         self.messagebox = 0
 
-        self.watchdog = WatchDog(clientID, self.ball)
+        # self.watchdog = WatchDog(clientID, self.ball)
 
         self.scoreBoard = Scoreboard(clientID)
 
@@ -124,7 +124,7 @@ class GameState:
             self.gameLoop()
 
     def gameLoop(self):
-        self.bot2.update_robot()
+        # self.bot2.update_robot()
         self.bot.update_robot()
         if self.messagebox == 0:
             sim.simxEndDialog(clientID,self.dialog,sim.simx_opmode_oneshot)
@@ -137,7 +137,7 @@ class GameState:
             clientID, self.goalDetectionSensorB, sim.simx_opmode_blocking
         )
 
-        self.watchdog.update_watchdog()
+        # self.watchdog.update_watchdog()
 
         goalScoredA = goalScoredAData[0][9] < 0.3
         goalScoredB = goalScoredBData[0][9] < 0.3
@@ -183,6 +183,12 @@ class SoccerRobot:
         self.res, self.ballSensor = sim.simxGetObjectHandle(
             clientID, f"Ball_Sensor_{robotLetter}", sim.simx_opmode_blocking
         )
+        self.res, self.ballSensor2 = sim.simxGetObjectHandle(
+            clientID, f"Ball_Sensor_{robotLetter}0", sim.simx_opmode_blocking
+        )
+        self.res, self.ballSensor3 = sim.simxGetObjectHandle(
+            clientID, f"Ball_Sensor_{robotLetter}1", sim.simx_opmode_blocking
+        )
         self.res, self.proximitySensor = sim.simxGetObjectHandle(
             clientID, f"Proximity_sensor_{robotLetter}", sim.simx_opmode_blocking
         )
@@ -215,6 +221,12 @@ class SoccerRobot:
         _, ballDetectionState, ballSensorData = sim.simxReadVisionSensor(
             self.clientID, self.ballSensor, sim.simx_opmode_blocking
         )
+        _, ballDetectionState, ballSensorData2 = sim.simxReadVisionSensor(
+            self.clientID, self.ballSensor2, sim.simx_opmode_blocking
+        )
+        _, ballDetectionState, ballSensorData3 = sim.simxReadVisionSensor(
+            self.clientID, self.ballSensor3, sim.simx_opmode_blocking
+        )
         (_, proxDetectionState, detectedPoint, _, _,) = sim.simxReadProximitySensor(
             self.clientID, self.proximitySensor, sim.simx_opmode_blocking
         )
@@ -223,6 +235,8 @@ class SoccerRobot:
         )
 
         facingBall = ballSensorData[0][9] < 0.3
+        ballLeft = ballSensorData3[0][9] < 0.3
+        ballRight = ballSensorData2[0][9] < 0.3
         touchingBall = proxDetectionState and detectedPoint[2] < 0.2
         facingGoalLine = goalLineSensorData[0][9] < 0.3
 
@@ -251,12 +265,29 @@ class SoccerRobot:
                     )
 
         else:
-            _ = sim.simxSetJointTargetVelocity(
-                self.clientID, self.rightJoint, 0.5*self.direction, sim.simx_opmode_oneshot
-            )
-            _ = sim.simxSetJointTargetVelocity(
-                self.clientID, self.leftJoint, -0.5*self.direction, sim.simx_opmode_oneshot
-            )
+            if ballRight:
+                _ = sim.simxSetJointTargetVelocity(
+                    self.clientID, self.rightJoint, 0.5, sim.simx_opmode_oneshot
+                )
+                _ = sim.simxSetJointTargetVelocity(
+                    self.clientID, self.leftJoint, 0.1, sim.simx_opmode_oneshot
+                )
+        
+            elif ballLeft:
+                _ = sim.simxSetJointTargetVelocity(
+                    self.clientID, self.rightJoint, 0.1, sim.simx_opmode_oneshot
+                )
+                _ = sim.simxSetJointTargetVelocity(
+                    self.clientID, self.leftJoint, 0.5, sim.simx_opmode_oneshot
+                )
+        
+            else:
+                _ = sim.simxSetJointTargetVelocity(
+                    self.clientID, self.rightJoint, 0.5*self.direction, sim.simx_opmode_oneshot
+                )
+                _ = sim.simxSetJointTargetVelocity(
+                    self.clientID, self.leftJoint, -0.5*self.direction, sim.simx_opmode_oneshot
+                )
         
         new_position = sim.simxGetObjectPosition(self.clientID, self.ballSensor, -1, sim.simx_opmode_blocking)[1]
         # Get the current time
