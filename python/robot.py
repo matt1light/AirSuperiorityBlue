@@ -92,7 +92,10 @@ class GameState:
         self.res, self.goalDetectionSensorA = sim.simxGetObjectHandle(
             clientID, "Goal_Detection_Sensor_A", sim.simx_opmode_blocking
         )
-        self.get_initial_positions()
+        self.res, self.goalDetectionSensorB = sim.simxGetObjectHandle(
+            clientID, "Goal_Detection_Sensor_B", sim.simx_opmode_blocking
+        )
+        # self.set_initial_positions()
         self.dialog = 0
         self.messagebox = 0
 
@@ -106,10 +109,17 @@ class GameState:
         _, goalScoredAState, goalScoredAData = sim.simxReadVisionSensor(
             clientID, self.goalDetectionSensorA, sim.simx_opmode_blocking
         )
+        _, goalScoredBState, goalScoredBData = sim.simxReadVisionSensor(
+            clientID, self.goalDetectionSensorB, sim.simx_opmode_blocking
+        )
+
         goalScoredA = goalScoredAData[0][9] < 0.3
+        goalScoredB = goalScoredBData[0][9] < 0.3
         if goalScoredA:
-            print(goalScoredA)
             self.scoreBoard.scoreA()
+            self.set_initial_positions()
+        if goalScoredB:
+            self.scoreBoard.scoreB()
             self.set_initial_positions()
 
     def get_initial_positions(self):
