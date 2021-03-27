@@ -36,7 +36,7 @@ class WatchDog:
         self.last_moved_time = time.time()
 
         # the number of seconds until the ball's location is reset
-        self.timeout = 10
+        self.timeout = 20
 
         self.clientID = clientID
 
@@ -55,9 +55,9 @@ class WatchDog:
         else:
             # If the ball hasn't moved, check if the time since the last move is more than the timeout value
             time_elapsed = current_time - self.last_moved_time
-            print(time_elapsed)
             if (time_elapsed >= self.timeout):
                 # If the ball has not moved in timeout number of seconds, we reset the location of the ball
+                print(f"Ball did not move for {self.timeout} seconds, so its location was reset")
                 self.set_initial_positions()
 
     def set_initial_positions(self):
@@ -85,6 +85,10 @@ class Scoreboard:
         if (self.dialog != 0):
             sim.simxEndDialog(self.clientID,self.dialog,sim.simx_opmode_oneshot)
         _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'A: {self.robotAScore} || B: {self.robotBScore}', 0, " ", None , None, sim.simx_opmode_blocking)
+    
+    def close(self):
+        if (self.dialog != 0):
+            sim.simxEndDialog(self.clientID,self.dialog,sim.simx_opmode_oneshot)
 
 class GameState:
     """
@@ -100,6 +104,10 @@ class GameState:
         self.res, self.goalDetectionSensorB = sim.simxGetObjectHandle(
             clientID, "Goal_Detection_Sensor_B", sim.simx_opmode_blocking
         )
+        self.bot = SoccerRobot(clientID=clientID, robotLetter="A")
+        self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B")
+        self.clientID = clientID
+
         # self.set_initial_positions()
         self.dialog = 0
         self.messagebox = 0
@@ -108,7 +116,16 @@ class GameState:
 
         self.scoreBoard = Scoreboard(clientID)
 
+        self.maxScore = 1
+        self.quit = False
+
+    def start(self):
+        while (not self.quit):
+            self.gameLoop()
+
     def gameLoop(self):
+        self.bot2.update_robot()
+        self.bot.update_robot()
         if self.messagebox == 0:
             sim.simxEndDialog(clientID,self.dialog,sim.simx_opmode_oneshot)
             self.messagebox = 1
@@ -130,6 +147,18 @@ class GameState:
         if goalScoredB:
             self.scoreBoard.scoreB()
             self.set_initial_positions()
+        if (self.scoreBoard.robotAScore >= self.maxScore):
+            self.endGame("A")
+        if (self.scoreBoard.robotBScore >= self.maxScore):
+            self.endGame("B")
+    
+    def endGame(self, winner):
+        self.scoreBoard.close()
+        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'Robot {winner} wins\nA: {self.scoreBoard.robotAScore} || B: {self.scoreBoard.robotBScore}', 0, " ", None , None, sim.simx_opmode_blocking)
+        self.quit = True
+        self.bot.end()
+        self.bot2.end()
+
 
     def get_initial_positions(self):
         self.initial_ball_position = sim.simxGetObjectPosition(clientID, self.ball, -1, sim.simx_opmode_blocking)[1]
@@ -143,7 +172,6 @@ class SoccerRobot:
     """
 
     """
-
     def __init__(self, clientID, robotLetter):
         # Now try to retrieve data in a blocking fashion (i.e. a service call):
         self.res, self.leftJoint = sim.simxGetObjectHandle(
@@ -165,6 +193,8 @@ class SoccerRobot:
         sim.simxSetJointTargetVelocity(
             clientID, self.leftJoint, 1, sim.simx_opmode_oneshot
         )
+        self.clientID = clientID
+
         self.objects = [
             self.leftJoint,
             self.rightJoint,
@@ -175,17 +205,16 @@ class SoccerRobot:
 
     
 
-    def update_robot(self, clientID) -> bool:
+    def update_robot(self) -> bool:
         _, ballDetectionState, ballSensorData = sim.simxReadVisionSensor(
-            clientID, self.ballSensor, sim.simx_opmode_blocking
+            self.clientID, self.ballSensor, sim.simx_opmode_blocking
         )
         (_, proxDetectionState, detectedPoint, _, _,) = sim.simxReadProximitySensor(
-            clientID, self.proximitySensor, sim.simx_opmode_blocking
+            self.clientID, self.proximitySensor, sim.simx_opmode_blocking
         )
         _, goalLineSensorState, goalLineSensorData = sim.simxReadVisionSensor(
-            clientID, self.goalLineSensor, sim.simx_opmode_blocking
+            self.clientID, self.goalLineSensor, sim.simx_opmode_blocking
         )
-
 
         facingBall = ballSensorData[0][9] < 0.3
         touchingBall = proxDetectionState and detectedPoint[2] < 0.15
@@ -194,43 +223,51 @@ class SoccerRobot:
         if facingBall:
             if not touchingBall:
                 _ = sim.simxSetJointTargetVelocity(
-                    clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
                 )
             else:
                 _ = sim.simxSetJointTargetVelocity(
-                    clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
                 )
-                print("Have the ball")
                 if facingGoalLine:
                     _ = sim.simxSetJointTargetVelocity(
-                        clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
+                        self.clientID, self.rightJoint, 5, sim.simx_opmode_oneshot
                     )
                     _ = sim.simxSetJointTargetVelocity(
-                        clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
+                        self.clientID, self.leftJoint, 5, sim.simx_opmode_oneshot
                     )
                 else:
                     _ = sim.simxSetJointTargetVelocity(
-                        clientID, self.rightJoint, -0.5, sim.simx_opmode_oneshot
+                        self.clientID, self.rightJoint, -0.5, sim.simx_opmode_oneshot
                     )
                     _ = sim.simxSetJointTargetVelocity(
-                        clientID, self.leftJoint, 0.5, sim.simx_opmode_oneshot
+                        self.clientID, self.leftJoint, 0.5, sim.simx_opmode_oneshot
                     )
 
         else:
             _ = sim.simxSetJointTargetVelocity(
-                clientID, self.rightJoint, -0.5, sim.simx_opmode_oneshot
+                self.clientID, self.rightJoint, -0.5, sim.simx_opmode_oneshot
             )
             _ = sim.simxSetJointTargetVelocity(
-                clientID, self.leftJoint, 0.5, sim.simx_opmode_oneshot
+                self.clientID, self.leftJoint, 0.5, sim.simx_opmode_oneshot
             )
 
         return False
+    
+    def end(self):
+        _ = sim.simxSetJointTargetVelocity(
+            self.clientID, self.rightJoint, 0, sim.simx_opmode_oneshot
+        )
+        _ = sim.simxSetJointTargetVelocity(
+            self.clientID, self.leftJoint, 0, sim.simx_opmode_oneshot
+        )
+
 
 
 print("Program started")
@@ -242,14 +279,9 @@ if clientID != -1:
     print("Connected to remote API server")
 
     # Now try to retrieve data in a blocking fashion (i.e. a service call):
-    bot = SoccerRobot(clientID=clientID, robotLetter="A")
-    bot2 = SoccerRobot(clientID=clientID, robotLetter="B")
     gamestate = GameState(clientID=clientID)
 
-    while True:
-        bot2.update_robot(clientID=clientID)
-        bot.update_robot(clientID=clientID)
-        gamestate.gameLoop()
+    gamestate.start()
 
     # Now send some data to CoppeliaSim in a non-blocking fashion:
     sim.simxAddStatusbarMessage(clientID, "Hello CoppeliaSim!", sim.simx_opmode_oneshot)
