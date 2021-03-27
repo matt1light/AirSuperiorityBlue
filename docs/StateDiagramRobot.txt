@@ -28,8 +28,6 @@ state GoalLineMovement {
 	}
 }
 
-note "The state of the robot is determined by\nthe value of its sensors\nBallDetection, BallProximity, and GoalLineDetection\n0 is not triggered 1 is triggered" as N1
-
 [*] --> 000
 
 BallDetection -[hidden]-> BallMovement
