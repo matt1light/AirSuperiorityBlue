@@ -108,7 +108,7 @@ class GameState:
         self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=-1)
         self.clientID = clientID
 
-        # self.set_initial_positions()
+        self.set_initial_positions()
         self.dialog = 0
         self.messagebox = 0
 
