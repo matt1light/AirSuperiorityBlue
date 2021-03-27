@@ -74,7 +74,7 @@ class Scoreboard:
         self._updateScoreBoard()
 
     def scoreA(self):
-        self.robotAScore += 1
+        self.robotAScore +=1
         self._updateScoreBoard()
 
     def scoreB(self):
@@ -137,7 +137,7 @@ class GameState:
             clientID, self.goalDetectionSensorB, sim.simx_opmode_blocking
         )
 
-        # self.watchdog.update_watchdog()
+        self.watchdog.update_watchdog()
 
         goalScoredA = goalScoredAData[0][9] < 0.3
         goalScoredB = goalScoredBData[0][9] < 0.3
@@ -311,6 +311,7 @@ class SoccerRobot:
                 _ = sim.simxSetJointTargetVelocity(
                     self.clientID, self.leftJoint, -20, sim.simx_opmode_oneshot
                 )
+                self.last_movement_time = time.time()
 
         return False
     
