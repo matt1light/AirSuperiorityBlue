@@ -240,7 +240,7 @@ class SoccerRobot:
         facingBall = ballSensorData[0][9] < 0.3
         ballLeft = ballSensorData3[0][9] < 0.3
         ballRight = ballSensorData2[0][9] < 0.3
-        touchingBall = proxDetectionState and detectedPoint[2] < 0.25
+        touchingBall = proxDetectionState and detectedPoint[2] < 0.23
         facingGoalLine = goalLineSensorData[0][9] < 0.3
 
         if facingBall:
@@ -270,18 +270,18 @@ class SoccerRobot:
         else:
             if ballRight:
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, self.slow_speed, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, self.slow_speed*2, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, self.slow_speed/2, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, self.slow_speed, sim.simx_opmode_oneshot
                 )
         
             elif ballLeft:
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, self.slow_speed/2, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, self.slow_speed, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, self.slow_speed, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, self.slow_speed*2, sim.simx_opmode_oneshot
                 )
         
             else:
