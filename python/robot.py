@@ -108,7 +108,7 @@ class GameState:
         self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=1)
         self.clientID = clientID
 
-        # self.set_initial_positions()
+        self.set_initial_positions()
         self.dialog = 0
         self.messagebox = 0
 
@@ -246,10 +246,10 @@ class SoccerRobot:
         if facingBall:
             if not touchingBall:
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, self.base_speed, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, 1.3*self.base_speed, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, self.base_speed, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, 1.3*self.base_speed, sim.simx_opmode_oneshot
                 )
             else:
                 if facingGoalLine:
@@ -261,10 +261,10 @@ class SoccerRobot:
                     )
                 else:
                     _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.rightJoint, -self.slow_speed*self.direction, sim.simx_opmode_oneshot
+                        self.clientID, self.rightJoint, -1.3*self.slow_speed*self.direction, sim.simx_opmode_oneshot
                     )
                     _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.leftJoint, self.slow_speed*self.direction, sim.simx_opmode_oneshot
+                        self.clientID, self.leftJoint, 1.3*self.slow_speed*self.direction, sim.simx_opmode_oneshot
                     )
 
         else:
