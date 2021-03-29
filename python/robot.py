@@ -30,7 +30,7 @@ class WatchDog:
         self.ball = ball
 
         # The location of the ball in the last game loop
-        self.last_ball_position = sim.simxGetObjectPosition(clientID, self.ball, -1, sim.simx_opmode_blocking)[1]
+        self.last_ball_position = sim.simxGetObjectPosition(clientID, self.ball, -1, sim.simx_opmode_streaming)[1]
 
         # The last time that the ball was moved, if this is more than the timeout value
         self.last_moved_time = time.time()
@@ -42,7 +42,7 @@ class WatchDog:
 
     def update_watchdog(self):
         # Get the current position of the ball
-        new_position = sim.simxGetObjectPosition(self.clientID, self.ball, -1, sim.simx_opmode_blocking)[1]
+        new_position = sim.simxGetObjectPosition(self.clientID, self.ball, -1, sim.simx_opmode_buffer)[1]
         # Get the current time
         current_time = time.time()
         # If the ball has moved then update the stored ball location, and set the last moved time to the current time
@@ -62,7 +62,7 @@ class WatchDog:
 
     def set_initial_positions(self):
         sim.simxSetObjectPosition(
-            self.clientID, self.ball, -1, [random.uniform(-1,1), random.uniform(-0.5, 0.5), 0.05], sim.simx_opmode_blocking
+            self.clientID, self.ball, -1, [random.uniform(-1,1), random.uniform(-0.5, 0.5), 0.05], sim.simx_opmode_oneshot
         )
 
 class Scoreboard:
@@ -84,7 +84,7 @@ class Scoreboard:
     def _updateScoreBoard(self):
         if (self.dialog != 0):
             sim.simxEndDialog(self.clientID,self.dialog,sim.simx_opmode_oneshot)
-        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'A: {self.robotAScore} || B: {self.robotBScore}', 0, " ", None , None, sim.simx_opmode_blocking)
+        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'A: {self.robotAScore} || B: {self.robotBScore}', 0, " ", None , None, sim.simx_opmode_oneshot)
     
     def close(self):
         if (self.dialog != 0):
@@ -108,7 +108,7 @@ class GameState:
         self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=1)
         self.clientID = clientID
 
-        self.set_initial_positions()
+        # self.set_initial_positions()
         self.dialog = 0
         self.messagebox = 0
 
@@ -118,6 +118,7 @@ class GameState:
 
         self.maxScore = 5
         self.quit = False
+        self.opmode = sim.simx_opmode_streaming
 
     def start(self):
         while (not self.quit):
@@ -130,17 +131,22 @@ class GameState:
             sim.simxEndDialog(clientID,self.dialog,sim.simx_opmode_oneshot)
             self.messagebox = 1
 
+
         _, goalScoredAState, goalScoredAData = sim.simxReadVisionSensor(
-            clientID, self.goalDetectionSensorA, sim.simx_opmode_blocking
+            clientID, self.goalDetectionSensorA, self.opmode
         )
         _, goalScoredBState, goalScoredBData = sim.simxReadVisionSensor(
-            clientID, self.goalDetectionSensorB, sim.simx_opmode_blocking
+            clientID, self.goalDetectionSensorB, self.opmode
         )
+        self.opmode = sim.simx_opmode_buffer
 
         self.watchdog.update_watchdog()
+        try:
+            goalScoredA = goalScoredAData[0][9] < 0.3
+            goalScoredB = goalScoredBData[0][9] < 0.3
+        except IndexError:
+            return
 
-        goalScoredA = goalScoredAData[0][9] < 0.3
-        goalScoredB = goalScoredBData[0][9] < 0.3
         if goalScoredA:
             self.scoreBoard.scoreA()
             self.set_initial_positions()
@@ -154,7 +160,7 @@ class GameState:
     
     def endGame(self, winner):
         self.scoreBoard.close()
-        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'Robot {winner} wins\nA: {self.scoreBoard.robotAScore} || B: {self.scoreBoard.robotBScore}', 0, " ", None , None, sim.simx_opmode_blocking)
+        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'Robot {winner} wins\nA: {self.scoreBoard.robotAScore} || B: {self.scoreBoard.robotBScore}', 0, " ", None , None, sim.simx_opmode_oneshot)
         self.quit = True
         self.bot.end()
         self.bot2.end()
@@ -165,7 +171,7 @@ class GameState:
 
     def set_initial_positions(self):
         sim.simxSetObjectPosition(
-            clientID, self.ball, -1, [random.uniform(-1,1), random.uniform(-0.5, 0.5), 0.05], sim.simx_opmode_blocking
+            clientID, self.ball, -1, [random.uniform(-1,1), random.uniform(-0.5, 0.5), 0.05], sim.simx_opmode_oneshot
         )
 
 class SoccerRobot:
@@ -189,11 +195,23 @@ class SoccerRobot:
         self.res, self.ballSensor3 = sim.simxGetObjectHandle(
             clientID, f"Ball_Sensor_{robotLetter}1", sim.simx_opmode_blocking
         )
+        self.res, self.ballSensorLeft = sim.simxGetObjectHandle(
+            clientID, f"Ball_Sensor_Left_{robotLetter}", sim.simx_opmode_blocking
+        )
+        self.res, self.ballSensorRight = sim.simxGetObjectHandle(
+            clientID, f"Ball_Sensor_Right_{robotLetter}", sim.simx_opmode_blocking
+        )
         self.res, self.proximitySensor = sim.simxGetObjectHandle(
             clientID, f"Proximity_sensor_{robotLetter}", sim.simx_opmode_blocking
         )
         self.res, self.goalLineSensor = sim.simxGetObjectHandle(
             clientID, f"Goal_Line_Sensor_{robotLetter}", sim.simx_opmode_blocking
+        )
+        self.res, self.goalLineSensorLeft = sim.simxGetObjectHandle(
+            clientID, f"Goal_Line_Sensor_Left_{robotLetter}", sim.simx_opmode_blocking
+        )
+        self.res, self.goalLineSensorRight = sim.simxGetObjectHandle(
+            clientID, f"Goal_Line_Sensor_Right_{robotLetter}", sim.simx_opmode_blocking
         )
 
         sim.simxSetJointTargetVelocity(
@@ -210,6 +228,7 @@ class SoccerRobot:
             self.proximitySensor,
             self.goalLineSensor,
         ]
+        self.last_state = ""
 
         self.base_speed = 5
         self.slow_speed = 0.5
@@ -217,80 +236,104 @@ class SoccerRobot:
         self.last_location = []
         self.last_movement_time = 0
         self.timeout = 6
+        self.opmode = sim.simx_opmode_streaming
+
+    def setSpeed(self, leftSpeed, rightSpeed):
+        _ = sim.simxSetJointTargetVelocity(
+            self.clientID, self.rightJoint, rightSpeed, sim.simx_opmode_oneshot
+        )
+        _ = sim.simxSetJointTargetVelocity(
+            self.clientID, self.leftJoint, leftSpeed, sim.simx_opmode_oneshot
+        )
+
 
     
 
     def update_robot(self) -> bool:
         _, ballDetectionState, ballSensorData = sim.simxReadVisionSensor(
-            self.clientID, self.ballSensor, sim.simx_opmode_blocking
+            self.clientID, self.ballSensor, self.opmode
         )
         _, ballDetectionState, ballSensorData2 = sim.simxReadVisionSensor(
-            self.clientID, self.ballSensor2, sim.simx_opmode_blocking
+            self.clientID, self.ballSensor2, self.opmode
         )
         _, ballDetectionState, ballSensorData3 = sim.simxReadVisionSensor(
-            self.clientID, self.ballSensor3, sim.simx_opmode_blocking
+            self.clientID, self.ballSensor3, self.opmode
+        )
+        _, ballDetectionState, ballSensorDataLeft = sim.simxReadVisionSensor(
+            self.clientID, self.ballSensorLeft, self.opmode
+        )
+        _, ballDetectionState, ballSensorDataRight = sim.simxReadVisionSensor(
+            self.clientID, self.ballSensorRight, self.opmode
         )
         (_, proxDetectionState, detectedPoint, _, _,) = sim.simxReadProximitySensor(
-            self.clientID, self.proximitySensor, sim.simx_opmode_blocking
+            self.clientID, self.proximitySensor, self.opmode
         )
         _, goalLineSensorState, goalLineSensorData = sim.simxReadVisionSensor(
-            self.clientID, self.goalLineSensor, sim.simx_opmode_blocking
+            self.clientID, self.goalLineSensor, self.opmode
         )
+        _, goalLineSensorState, goalLineSensorDataLeft = sim.simxReadVisionSensor(
+            self.clientID, self.goalLineSensorLeft, self.opmode
+        )
+        _, goalLineSensorState, goalLineSensorDataRight = sim.simxReadVisionSensor(
+            self.clientID, self.goalLineSensorRight, self.opmode
+        )
+        self.opmode = sim.simx_opmode_buffer
 
-        facingBall = ballSensorData[0][9] < 0.3
-        ballLeft = ballSensorData3[0][9] < 0.3
-        ballRight = ballSensorData2[0][9] < 0.3
-        touchingBall = proxDetectionState and detectedPoint[2] < 0.23
-        facingGoalLine = goalLineSensorData[0][9] < 0.3
+        try:
+            facingBall = ballSensorData[0][9] < 0.3
+            ballRight = ballSensorData3[0][9] < 0.3
+            ballLeft = ballSensorData2[0][9] < 0.3
+            ballSideLeft = ballSensorDataLeft[0][9] < 0.3
+            ballSideRight = ballSensorDataRight[0][9] < 0.3
+            touchingBall = proxDetectionState and detectedPoint[2] < 0.28
+            facingGoalLine = goalLineSensorData[0][9] < 0.3
+            goalLineRight = goalLineSensorDataRight[0][9] < 0.3
+            goalLineLeft = goalLineSensorDataLeft[0][9] < 0.3
+        except IndexError:
+            return
 
         if facingBall:
             if not touchingBall:
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, 1.3*self.base_speed, sim.simx_opmode_oneshot
-                )
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, 1.3*self.base_speed, sim.simx_opmode_oneshot
-                )
+                if (self.last_state != "touchingBall"):
+                    self.setSpeed(1.3*self.base_speed, 1.3*self.base_speed)
+                    self.last_state = "touchingBall"
             else:
                 if facingGoalLine:
-                    _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.rightJoint, self.base_speed, sim.simx_opmode_oneshot
-                    )
-                    _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.leftJoint, self.base_speed, sim.simx_opmode_oneshot
-                    )
+                    if (self.last_state != "facingGoalLine"):
+                        self.setSpeed(self.base_speed, self.base_speed)
+                        self.last_state = "facingGoalLine"
                 else:
-                    _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.rightJoint, -1.3*self.slow_speed*self.direction, sim.simx_opmode_oneshot
-                    )
-                    _ = sim.simxSetJointTargetVelocity(
-                        self.clientID, self.leftJoint, 1.3*self.slow_speed*self.direction, sim.simx_opmode_oneshot
-                    )
+                    if (self.last_state != "findingGoalLine"):
+                        self.setSpeed(1.3*self.slow_speed*self.direction, -1.3*self.slow_speed*self.direction)
+                        self.last_state = "findingGoalLine"
+                if goalLineLeft:
+                    self.direction = 1
+                    self.last_state = "directionSwitch"
+                if goalLineRight:
+                    self.direction = -1
+                    self.last_state = "directionSwitch"
 
         else:
-            if ballRight:
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, self.slow_speed*2, sim.simx_opmode_oneshot
-                )
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, self.slow_speed, sim.simx_opmode_oneshot
-                )
+            if ballLeft:
+                if (self.last_state != "ballLeft"):
+                    self.setSpeed(self.slow_speed, self.slow_speed*2)
+                    self.last_state = "ballLeft"
         
-            elif ballLeft:
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, self.slow_speed, sim.simx_opmode_oneshot
-                )
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, self.slow_speed*2, sim.simx_opmode_oneshot
-                )
-        
+            elif ballRight:
+                if (self.last_state != "ballRight"):
+                    self.setSpeed(self.slow_speed*2, self.slow_speed)
+                    self.last_state = "ballRight"
             else:
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, -self.slow_speed*self.direction, sim.simx_opmode_oneshot
-                )
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, self.slow_speed*self.direction, sim.simx_opmode_oneshot
-                )
+                if (self.last_state != "findingBall"):
+                    self.setSpeed(self.slow_speed*self.direction, -self.slow_speed*self.direction)
+                    self.last_state = "findingBall"
+            if ballSideLeft:
+                self.direction = 1
+                self.last_state = "switchDirection"
+            elif ballSideRight:
+                self.direction = -1
+                self.last_state = "switchDirection"
+        
         
         new_position = sim.simxGetObjectPosition(self.clientID, self.ballSensor, -1, sim.simx_opmode_blocking)[1]
         # Get the current time
@@ -308,12 +351,13 @@ class SoccerRobot:
             if (time_elapsed >= self.timeout):
                 # If the ball has not moved in timeout number of seconds, we reset the location of the ball
                 print(f"Robot did not move for {self.timeout} seconds, so it reversed")
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, -90, sim.simx_opmode_oneshot
-                )
-                _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, -90, sim.simx_opmode_oneshot
-                )
+                if (self.last_state == "reverse"):
+                    self.direction *= -1
+                    self.last_state = "changeDirections"
+                else:
+                    self.setSpeed(-90, -90)
+                    self.last_state = "reverse"
+                    time.sleep(1)
                 self.last_movement_time = time.time()
 
         return False
