@@ -83,8 +83,8 @@ class Scoreboard:
 
     def _updateScoreBoard(self):
         if (self.dialog != 0):
-            sim.simxEndDialog(self.clientID,self.dialog,sim.simx_opmode_oneshot)
-        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'A: {self.robotAScore} || B: {self.robotBScore}', 0, " ", None , None, sim.simx_opmode_oneshot)
+            sim.simxEndDialog(self.clientID, self.dialog, sim.simx_opmode_blocking)
+        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'Blue: {self.robotAScore} || Red: {self.robotBScore}', 0, " ", None , None, sim.simx_opmode_blocking)
     
     def close(self):
         if (self.dialog != 0):
@@ -105,7 +105,7 @@ class GameState:
             clientID, "Goal_Detection_Sensor_B", sim.simx_opmode_blocking
         )
         self.bot = SoccerRobot(clientID=clientID, robotLetter="A", direction=-1)
-        self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=1)
+        self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=-1)
         self.clientID = clientID
 
         self.set_initial_positions()
@@ -160,7 +160,12 @@ class GameState:
     
     def endGame(self, winner):
         self.scoreBoard.close()
-        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'Robot {winner} wins\nA: {self.scoreBoard.robotAScore} || B: {self.scoreBoard.robotBScore}', 0, " ", None , None, sim.simx_opmode_oneshot)
+        _winner = ""
+        if (winner == "A"):
+            _winner = "Blue"
+        if (winner == "B"):
+            _winner = "Red"
+        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'Robot {_winner} wins\nBlue: {self.scoreBoard.robotAScore} || Red: {self.scoreBoard.robotBScore}', 0, " ", None , None, sim.simx_opmode_oneshot)
         self.quit = True
         self.bot.end()
         self.bot2.end()
@@ -235,7 +240,7 @@ class SoccerRobot:
 
         self.last_location = []
         self.last_movement_time = 0
-        self.timeout = 7
+        self.timeout = 10
         self.opmode = sim.simx_opmode_streaming
 
     def setSpeed(self, leftSpeed, rightSpeed):
@@ -277,15 +282,17 @@ class SoccerRobot:
         _, goalLineSensorState, goalLineSensorDataRight = sim.simxReadVisionSensor(
             self.clientID, self.goalLineSensorRight, self.opmode
         )
+        new_position_array = sim.simxGetObjectPosition(self.clientID, self.ballSensor, -1, self.opmode)
         self.opmode = sim.simx_opmode_buffer
 
         try:
+            new_position = new_position_array[1]
             facingBall = ballSensorData[0][9] < 0.3
             ballRight = ballSensorData3[0][9] < 0.3
             ballLeft = ballSensorData2[0][9] < 0.3
             ballSideLeft = ballSensorDataLeft[0][9] < 0.3
             ballSideRight = ballSensorDataRight[0][9] < 0.3
-            touchingBall = proxDetectionState and detectedPoint[2] < 0.2
+            touchingBall = proxDetectionState and detectedPoint[2] < 0.23
             facingGoalLine = goalLineSensorData[0][9] < 0.3
             goalLineRight = goalLineSensorDataRight[0][9] < 0.3
             goalLineLeft = goalLineSensorDataLeft[0][9] < 0.3
@@ -335,7 +342,6 @@ class SoccerRobot:
                 self.last_state = "switchDirection"
         
         
-        new_position = sim.simxGetObjectPosition(self.clientID, self.ballSensor, -1, sim.simx_opmode_blocking)[1]
         # Get the current time
         current_time = time.time()
         # If the ball has moved then update the stored ball location, and set the last moved time to the current time
@@ -351,13 +357,10 @@ class SoccerRobot:
             if (time_elapsed >= self.timeout):
                 # If the ball has not moved in timeout number of seconds, we reset the location of the ball
                 print(f"Robot did not move for {self.timeout} seconds, so it reversed")
-                if (self.last_state == "reverse"):
-                    self.direction *= -1
-                    self.last_state = "changeDirections"
-                else:
-                    self.setSpeed(-90, -90)
-                    self.last_state = "reverse"
-                    time.sleep(1)
+                self.setSpeed(-90, -90)
+                self.direction *= -1
+                self.last_state = "reverse"
+                time.sleep(0.2)
                 self.last_movement_time = time.time()
 
         return False
