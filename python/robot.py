@@ -108,7 +108,7 @@ class GameState:
         self.bot2 = SoccerRobot(clientID=clientID, robotLetter="B", direction=1)
         self.clientID = clientID
 
-        # self.set_initial_positions()
+        self.set_initial_positions()
         self.dialog = 0
         self.messagebox = 0
 
@@ -235,7 +235,7 @@ class SoccerRobot:
 
         self.last_location = []
         self.last_movement_time = 0
-        self.timeout = 6
+        self.timeout = 7
         self.opmode = sim.simx_opmode_streaming
 
     def setSpeed(self, leftSpeed, rightSpeed):
@@ -285,7 +285,7 @@ class SoccerRobot:
             ballLeft = ballSensorData2[0][9] < 0.3
             ballSideLeft = ballSensorDataLeft[0][9] < 0.3
             ballSideRight = ballSensorDataRight[0][9] < 0.3
-            touchingBall = proxDetectionState and detectedPoint[2] < 0.28
+            touchingBall = proxDetectionState and detectedPoint[2] < 0.2
             facingGoalLine = goalLineSensorData[0][9] < 0.3
             goalLineRight = goalLineSensorDataRight[0][9] < 0.3
             goalLineLeft = goalLineSensorDataLeft[0][9] < 0.3
