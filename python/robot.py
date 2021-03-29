@@ -216,7 +216,7 @@ class SoccerRobot:
 
         self.last_location = []
         self.last_movement_time = 0
-        self.timeout = 10
+        self.timeout = 6
 
     
 
@@ -309,10 +309,10 @@ class SoccerRobot:
                 # If the ball has not moved in timeout number of seconds, we reset the location of the ball
                 print(f"Robot did not move for {self.timeout} seconds, so it reversed")
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.rightJoint, -20, sim.simx_opmode_oneshot
+                    self.clientID, self.rightJoint, -90, sim.simx_opmode_oneshot
                 )
                 _ = sim.simxSetJointTargetVelocity(
-                    self.clientID, self.leftJoint, -20, sim.simx_opmode_oneshot
+                    self.clientID, self.leftJoint, -90, sim.simx_opmode_oneshot
                 )
                 self.last_movement_time = time.time()
 
