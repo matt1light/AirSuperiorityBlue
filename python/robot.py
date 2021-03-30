@@ -165,7 +165,7 @@ class GameState:
             _winner = "Blue"
         if (winner == "B"):
             _winner = "Red"
-        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'Robot {_winner} wins\nBlue: {self.scoreBoard.robotAScore} || Red: {self.scoreBoard.robotBScore}', 0, " ", None , None, sim.simx_opmode_oneshot)
+        _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'{_winner} wins\nBlue: {self.scoreBoard.robotAScore} || Red: {self.scoreBoard.robotBScore}', 0, " ", None , None, sim.simx_opmode_oneshot)
         self.quit = True
         self.bot.end()
         self.bot2.end()
