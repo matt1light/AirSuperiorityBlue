@@ -148,11 +148,11 @@ class GameState:
             return
 
         if goalScoredA:
+            self.set_initial_positions()
             self.scoreBoard.scoreA()
-            self.set_initial_positions()
         if goalScoredB:
-            self.scoreBoard.scoreB()
             self.set_initial_positions()
+            self.scoreBoard.scoreB()
         if (self.scoreBoard.robotAScore >= self.maxScore):
             self.endGame("A")
         if (self.scoreBoard.robotBScore >= self.maxScore):
