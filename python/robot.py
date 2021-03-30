@@ -62,7 +62,7 @@ class WatchDog:
 
     def set_initial_positions(self):
         sim.simxSetObjectPosition(
-            self.clientID, self.ball, -1, [random.uniform(-1,1), random.uniform(-0.5, 0.5), 0.05], sim.simx_opmode_oneshot
+            self.clientID, self.ball, -1, [random.uniform(-1,1), random.uniform(-0.5, 0.5), 0.05], sim.simx_opmode_blocking
         )
 
 class Scoreboard:
@@ -85,7 +85,7 @@ class Scoreboard:
         if (self.dialog != 0):
             sim.simxEndDialog(self.clientID, self.dialog, sim.simx_opmode_blocking)
         _, self.dialog, _ = sim.simxDisplayDialog(self.clientID, " ", f'Blue: {self.robotAScore} || Red: {self.robotBScore}', 0, " ", None , None, sim.simx_opmode_blocking)
-    
+
     def close(self):
         if (self.dialog != 0):
             sim.simxEndDialog(self.clientID,self.dialog,sim.simx_opmode_oneshot)
@@ -157,7 +157,7 @@ class GameState:
             self.endGame("A")
         if (self.scoreBoard.robotBScore >= self.maxScore):
             self.endGame("B")
-    
+
     def endGame(self, winner):
         self.scoreBoard.close()
         _winner = ""
@@ -252,7 +252,7 @@ class SoccerRobot:
         )
 
 
-    
+
 
     def update_robot(self) -> bool:
         _, ballDetectionState, ballSensorData = sim.simxReadVisionSensor(
@@ -325,7 +325,7 @@ class SoccerRobot:
                 if (self.last_state != "ballLeft"):
                     self.setSpeed(self.slow_speed, self.slow_speed*2)
                     self.last_state = "ballLeft"
-        
+
             elif ballRight:
                 if (self.last_state != "ballRight"):
                     self.setSpeed(self.slow_speed*2, self.slow_speed)
@@ -340,8 +340,8 @@ class SoccerRobot:
             elif ballSideRight:
                 self.direction = -1
                 self.last_state = "switchDirection"
-        
-        
+
+
         # Get the current time
         current_time = time.time()
         # If the ball has moved then update the stored ball location, and set the last moved time to the current time
@@ -364,7 +364,7 @@ class SoccerRobot:
                 self.last_movement_time = time.time()
 
         return False
-    
+
     def end(self):
         _ = sim.simxSetJointTargetVelocity(
             self.clientID, self.rightJoint, 0, sim.simx_opmode_oneshot
