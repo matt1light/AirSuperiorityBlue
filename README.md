@@ -7,6 +7,9 @@ SYSC 4805 Project
 * Open robot.py script located in Python directory of repository
 * Run robot.py
 
+# Video Demonstration
+https://youtu.be/hMpSu56g48w
+
 # Group member contributions
 | Commit Hash           | Group Member | Contribution                                       |
 |-----------------------|--------------|----------------------------------------------------|
